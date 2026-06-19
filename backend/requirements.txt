@@ -25,3 +25,6 @@ pymongo==4.9.2
 
 # Caching
 cachetools==5.5.0
+
+#sentiment
+vaderSentiment==3.3.2

@@ -29,8 +29,6 @@ class QuoteResponse(BaseModel):
 
 
 class TickerQuery(BaseModel):
-    """Shared validation for any endpoint that takes a ticker symbol."""
-
     ticker: str = Field(min_length=1, max_length=10)
 
     @field_validator("ticker")
@@ -43,16 +41,10 @@ class TickerQuery(BaseModel):
 
 
 class IndicatorsResponse(BaseModel):
-    """
-    Flat, parallel-array shape: timestamps[i] lines up with sma[i], rsi[i],
-    etc. Fields the caller didn't request via ?include= stay None and are
-    simply omitted by the chart code on the frontend.
-    """
     ticker: str
     period: str
     interval: str
     timestamps: list[datetime]
-
     sma: list[float | None] | None = None
     ema: list[float | None] | None = None
     rsi: list[float | None] | None = None
@@ -63,8 +55,6 @@ class IndicatorsResponse(BaseModel):
     bollinger_middle: list[float | None] | None = None
     bollinger_lower: list[float | None] | None = None
 
-
-# ---------- Predictions ----------
 
 class PredictionPoint(BaseModel):
     date: datetime
@@ -97,6 +87,28 @@ class ProphetForecastResponse(BaseModel):
 
 class RetrainStatusResponse(BaseModel):
     ticker: str
-    status: str  # idle | training | done | error
+    status: str
     progress: int
     message: str | None = None
+
+
+class SentimentScores(BaseModel):
+    positive: float
+    negative: float
+    neutral: float
+
+
+class ArticleSentiment(BaseModel):
+    title: str
+    url: str
+    source: str
+    published_at: str | None
+    label: str
+    score: float
+    scores: SentimentScores
+
+
+class TickerSentimentResponse(BaseModel):
+    ticker: str
+    overall: dict
+    articles: list[ArticleSentiment]
