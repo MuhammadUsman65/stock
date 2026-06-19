@@ -1,0 +1,19 @@
+{
+  "feature_columns": [
+    "close_return",
+    "volume_change",
+    "sma_20",
+    "ema_20",
+    "rsi_14",
+    "macd_line",
+    "macd_histogram",
+    "bb_percent_b"
+  ],
+  "window_size": 60,
+  "residual_std": 0.015775552259631977,
+  "trained_at": "2026-06-18T10:26:39.098367",
+  "train_rows": 358,
+  "test_rows": 64,
+  "max_epochs": 100,
+  "epochs_actually_run": 13
+}
