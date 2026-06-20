@@ -1,10 +1,3 @@
-"""
-Custom exception handling.
-
-In production we never want a raw Python traceback reaching the client.
-Every unhandled exception gets logged server-side with full detail and
-returns a sanitized, generic message to the caller.
-"""
 import logging
 import uuid
 
@@ -16,7 +9,6 @@ logger = logging.getLogger("stock_predictor")
 
 
 class AppError(Exception):
-    """Base class for expected, user-facing application errors."""
 
     def __init__(self, message: str, status_code: int = status.HTTP_400_BAD_REQUEST):
         self.message = message
@@ -30,7 +22,6 @@ class TickerNotFoundError(AppError):
 
 
 class UpstreamDataError(AppError):
-    """Raised when yfinance / a third-party data source fails or rate-limits us."""
 
     def __init__(self, detail: str = "Upstream market data source is unavailable."):
         super().__init__(detail, status.HTTP_503_SERVICE_UNAVAILABLE)
@@ -50,14 +41,7 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
 
 
 async def validation_error_handler(request: Request, exc: ValidationError) -> JSONResponse:
-    """
-    Catches pydantic.ValidationError raised by *manual* validation, e.g.
-    `TickerQuery(ticker=ticker)` inside a route body. This is different
-    from FastAPI's own request-validation errors (which it already turns
-    into clean 422s automatically when a Pydantic model is a route
-    parameter) - this handles the case where a model is instantiated
-    by hand inside the function instead.
-    """
+
     messages = [err["msg"] for err in exc.errors()]
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,

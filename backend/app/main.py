@@ -1,11 +1,3 @@
-"""
-FastAPI application entrypoint.
-
-Run locally with:
-    uvicorn app.main:app --reload --port 8000
-
-Swagger docs auto-generate at /docs, ReDoc at /redoc.
-"""
 import logging
 from contextlib import asynccontextmanager
 

@@ -1,13 +1,3 @@
-"""
-Market data service - thin wrapper around yfinance.
-
-Why caching matters here specifically: yfinance is an unofficial scraper
-around Yahoo Finance endpoints (no public API key, no SLA). It can rate-limit
-or intermittently fail. A short TTL cache means a burst of requests for the
-same ticker (e.g. multiple dashboard widgets loading at once) hits Yahoo once,
-not five times - and gives you a fallback if the most recent call failed but
-a slightly-stale cached copy exists.
-"""
 from datetime import datetime, timedelta
 
 import pandas as pd
@@ -26,12 +16,6 @@ def _cache_key(ticker: str, period: str, interval: str) -> str:
 
 
 def get_ohlcv(ticker: str, period: str = "6mo", interval: str = "1d") -> pd.DataFrame:
-    """
-    Fetch OHLCV history for a ticker.
-
-    period: yfinance period string, e.g. '1mo', '6mo', '1y', '5y', 'max'
-    interval: '1d', '1h', '5m', etc. (intraday intervals only work for short periods)
-    """
     key = _cache_key(ticker, period, interval)
     if key in _cache:
         return _cache[key]
@@ -45,7 +29,7 @@ def get_ohlcv(ticker: str, period: str = "6mo", interval: str = "1d") -> pd.Data
         raise TickerNotFoundError(ticker)
 
     df = df.reset_index()
-    # yfinance names the date column differently depending on interval - normalize it.
+
     date_col = "Date" if "Date" in df.columns else "Datetime"
     df = df.rename(columns={date_col: "timestamp"})
     df["timestamp"] = pd.to_datetime(df["timestamp"]).dt.tz_localize(None)
@@ -55,7 +39,6 @@ def get_ohlcv(ticker: str, period: str = "6mo", interval: str = "1d") -> pd.Data
 
 
 def get_quote(ticker: str) -> dict:
-    """Lightweight current-price snapshot, used for portfolio P&L and watchlists."""
     key = f"quote:{ticker.upper()}"
     if key in _cache:
         return _cache[key]

@@ -1,12 +1,3 @@
-"""
-Schemas for MongoDB-backed resources.
-
-Pattern used throughout: an "*Create" model is what the client sends in
-(no id yet, since Mongo generates that). The full model adds the
-Mongo-generated id plus any fields computed at read time, like current
-price - those are never stored in the database, they're calculated fresh
-on every request so they're never stale.
-"""
 from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator
@@ -17,7 +8,6 @@ def _validate_ticker(v: str) -> str:
     if not v.replace(".", "").replace("-", "").isalnum():
         raise ValueError("Ticker contains invalid characters.")
     return v
-
 
 # ---------- Portfolio ----------
 
@@ -58,7 +48,6 @@ class WatchlistItemCreate(BaseModel):
 
 
 class WatchlistItemUpdate(BaseModel):
-    """Only the fields someone is allowed to change after creation."""
     alert_threshold: float | None = Field(default=None, gt=0)
     alert_direction: str | None = Field(default=None, pattern="^(above|below)$")
 

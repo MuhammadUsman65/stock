@@ -1,14 +1,4 @@
-"""
-Technical indicator calculations.
-
-Every function here takes a plain pandas Series/DataFrame and returns
-plain pandas output - no FastAPI, no Pydantic, no knowledge of HTTP.
-That matters because Phase 4 (LSTM) will want these same indicators as
-model input features, not just as chart overlays - so this file stays
-reusable rather than being tangled into the route layer.
-"""
 import pandas as pd
-
 
 def sma(close: pd.Series, window: int = 20) -> pd.Series:
     """Simple Moving Average."""
@@ -21,12 +11,7 @@ def ema(close: pd.Series, window: int = 20) -> pd.Series:
 
 
 def rsi(close: pd.Series, window: int = 14) -> pd.Series:
-    """
-    Relative Strength Index (Wilder's smoothing), 0-100.
-    Conventionally >70 is called "overbought" and <30 "oversold" - those
-    thresholds are trading folklore, not a guarantee of anything, so treat
-    them as one input among many rather than a signal on their own.
-    """
+
     delta = close.diff()
     gain = delta.clip(lower=0)
     loss = -delta.clip(upper=0)
@@ -42,7 +27,6 @@ def rsi(close: pd.Series, window: int = 14) -> pd.Series:
 
 
 def macd(close: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> dict[str, pd.Series]:
-    """Moving Average Convergence Divergence. Returns the three standard lines."""
     ema_fast = ema(close, fast)
     ema_slow = ema(close, slow)
     macd_line = ema_fast - ema_slow
@@ -52,7 +36,6 @@ def macd(close: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> d
 
 
 def bollinger_bands(close: pd.Series, window: int = 20, num_std: float = 2.0) -> dict[str, pd.Series]:
-    """Returns upper/middle/lower bands. Middle band is just the SMA."""
     middle = sma(close, window)
     std = close.rolling(window=window).std()
     upper = middle + num_std * std
@@ -61,20 +44,10 @@ def bollinger_bands(close: pd.Series, window: int = 20, num_std: float = 2.0) ->
 
 
 def _to_list(series: pd.Series) -> list[float | None]:
-    """JSON has no NaN - convert to None so charting libraries skip the point instead of erroring."""
     return [float(v) if pd.notna(v) else None for v in series]
 
 
 def compute_indicators(df: pd.DataFrame, requested: set[str], **params) -> dict:
-    """
-    df must have a 'Close' (or 'close') column - matches whatever
-    market_data.get_ohlcv() returns.
-
-    requested: any subset of {"sma", "ema", "rsi", "macd", "bollinger"}.
-
-    Returns a flat dict whose keys match IndicatorsResponse's fields
-    exactly, so the route can do `IndicatorsResponse(..., **result)`.
-    """
     close_col = "close" if "close" in df.columns else "Close"
     close = df[close_col]
     out: dict = {}

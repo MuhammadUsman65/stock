@@ -1,42 +1,9 @@
-"""
-Sentiment analysis using VADER (Valence Aware Dictionary and sEntiment
-Reasoner) running fully locally.
-
-Original plan was HuggingFace Inference API (FinBERT), but that requires
-outbound HTTPS to api-inference.huggingface.co which is blocked on many
-university/corporate networks. VADER is the practical alternative:
-- Pure Python, no compiled backend, no external API calls
-- Installs in seconds (vaderSentiment package, ~1MB)
-- Works well on short texts like news headlines - exactly our use case
-- Returns positive/negative/neutral scores in the same format FinBERT
-  would have, so nothing else in the codebase needs to change
-
-VADER vs FinBERT honestly: FinBERT is more accurate on financial text
-because it was fine-tuned on financial news specifically. VADER is a
-general-purpose sentiment lexicon. For a portfolio project displaying
-headline sentiment as a visual indicator, VADER is more than good enough.
-If you later move to a network/host where outbound HTTPS works freely,
-swapping back to the HuggingFace API is a one-file change.
-"""
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 _analyzer = SentimentIntensityAnalyzer()
 
 
 async def analyze_sentiment(texts: list[str]) -> list[dict]:
-    """
-    Runs VADER on each text and returns sentiment scores.
-
-    Kept async to match the original HuggingFace-based signature exactly,
-    so the route file (app/api/sentiment.py) doesn't need any changes.
-    VADER itself is synchronous and CPU-bound but fast enough (~0.1ms per
-    headline) that blocking the event loop briefly is fine here.
-
-    Returns a list of dicts, one per input text, each with:
-        label: "positive" | "negative" | "neutral"
-        score: float, confidence of the top label (0-1)
-        scores: dict with all three raw scores
-    """
     results = []
     for text in texts:
         vs = _analyzer.polarity_scores(text)
@@ -66,11 +33,6 @@ async def analyze_sentiment(texts: list[str]) -> list[dict]:
 
 
 def aggregate_sentiment(sentiments: list[dict]) -> dict:
-    """
-    Rolls up per-article sentiment into a single ticker-level summary.
-    Weighted by each article's confidence score so a high-confidence
-    positive counts more than a low-confidence one.
-    """
     if not sentiments:
         return {
             "label": "neutral",

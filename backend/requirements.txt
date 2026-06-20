@@ -6,7 +6,7 @@ python-dotenv==1.0.1
 slowapi==0.1.9
 
 # Data
-yfinance==0.2.43
+yfinance>=0.2.43
 pandas==2.2.3
 numpy==1.26.4
 feedparser==6.0.11

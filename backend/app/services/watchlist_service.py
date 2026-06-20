@@ -1,7 +1,3 @@
-"""
-Watchlist business logic: add/list/update/remove tickers, evaluate whether
-a price alert threshold has been crossed.
-"""
 from datetime import datetime, timezone
 
 from bson import ObjectId
@@ -68,7 +64,6 @@ async def delete_watchlist_item(item_id: str) -> None:
 
 
 def _check_alert(item: WatchlistItem) -> None:
-    """Mutates `item` in place: fills current_price, flips alert_triggered if crossed."""
     try:
         quote = market_data.get_quote(item.ticker)
     except Exception:

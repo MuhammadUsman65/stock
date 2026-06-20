@@ -1,16 +1,4 @@
-"""
-Train an LSTM model for a ticker and save it to app/ml/artifacts/.
 
-Usage:
-    cd backend
-    python3 scripts/train_lstm.py AAPL
-    python3 scripts/train_lstm.py AAPL --epochs 50 --period 5y
-
-This is the recommended way to train models - run it yourself when you
-need a new/updated model, rather than relying solely on the /retrain API
-endpoint for every ticker. Training inside a live web request on a free
-hosting tier ties up that worker for the whole training duration.
-"""
 import argparse
 import sys
 from pathlib import Path

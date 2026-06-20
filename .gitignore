@@ -148,4 +148,12 @@ venv/
 backend/app/core/config.py
 __pycache__/
 *.pyc
+.vscode/
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
 

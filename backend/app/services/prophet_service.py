@@ -1,20 +1,3 @@
-"""
-Time series forecasting using Holt-Winters Exponential Smoothing
-(statsmodels).
-
-Replaces Prophet as the seasonality-aware forecasting model. Reasons:
-- Prophet requires CmdStan, a compiled C++ backend that is notoriously
-  fragile on Windows paths containing spaces or OneDrive folders.
-- statsmodels is pure Python - no compiled backend, no system dependencies,
-  works everywhere pip works.
-
-Holt-Winters handles the same two things Prophet was chosen for:
-- Trend: the model tracks whether prices are generally rising or falling.
-- Seasonality: weekly patterns in trading volume/price movement.
-
-Confidence intervals here are real statistical output from the model's
-state-space representation, not a heuristic like the LSTM bands.
-"""
 import warnings
 
 import numpy as np
@@ -56,9 +39,6 @@ def generate_forecast(
             initialization_method="estimated",
         ).fit(optimized=True)
 
-    # fittedvalues can be either a numpy array or pandas Series depending
-    # on the statsmodels version - normalize to numpy array so indexing
-    # always works the same way.
     fitted = np.asarray(model.fittedvalues)
     residuals = close - fitted
     resid_std = float(np.std(residuals))

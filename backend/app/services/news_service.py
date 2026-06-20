@@ -1,15 +1,3 @@
-"""
-News fetching via RSS feeds.
-
-Uses Yahoo Finance and Google News RSS - both are free, require no API
-key, and have no production-use restrictions unlike NewsAPI's free tier.
-feedparser handles the parsing; it's already in requirements.txt.
-
-One design note: we only send headlines (not full article text) to the
-HuggingFace Inference API for sentiment analysis. Full text would cost
-more API calls and isn't meaningfully more useful for FinBERT, which was
-trained on financial news headlines and short summaries specifically.
-"""
 import time
 from datetime import datetime, timezone
 
@@ -17,7 +5,7 @@ import feedparser
 from cachetools import TTLCache
 
 # Cache news results for 15 minutes - fresh enough to be useful,
-# not so aggressive that we spam RSS endpoints on every request.
+# not so aggressive that spam RSS endpoints on every request.
 _cache: TTLCache = TTLCache(maxsize=128, ttl=900)
 
 RSS_FEEDS = {
@@ -29,12 +17,6 @@ MAX_ARTICLES = 10
 
 
 def fetch_news(ticker: str) -> list[dict]:
-    """
-    Returns up to MAX_ARTICLES recent news items for the ticker,
-    each with title, url, source, and published_at fields.
-    Tries Yahoo Finance first, falls back to Google News if Yahoo
-    returns nothing.
-    """
     ticker = ticker.upper()
     if ticker in _cache:
         return _cache[ticker]

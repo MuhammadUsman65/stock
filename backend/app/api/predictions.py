@@ -47,10 +47,7 @@ async def trigger_retrain(
     background_tasks: BackgroundTasks,
     epochs: int = Query(100, ge=10, le=200, description="Maximum epochs - early stopping usually halts training sooner"),
 ):
-    """
-    Returns immediately with 202 Accepted; training runs in the
-    background. Poll GET /retrain/{ticker}/status for progress.
-    """
+
     validated = TickerQuery(ticker=ticker)
     background_tasks.add_task(lstm_service.train_and_save_model, validated.ticker, epochs)
     return {"message": f"Training started for {validated.ticker}.", "ticker": validated.ticker}

@@ -1,11 +1,3 @@
-"""
-Portfolio business logic.
-
-This is the only file that knows how P&L and allocation percentages are
-calculated - if that formula ever changes, this is the only place that
-needs to change. The route file (app/api/portfolio.py) just calls these
-functions and has no calculation logic of its own.
-"""
 from datetime import datetime, timezone
 
 from bson import ObjectId
@@ -78,14 +70,6 @@ async def get_portfolio_summary() -> dict:
 
 
 def _enrich_with_live_price(holding: Holding) -> None:
-    """
-    Mutates `holding` in place with current price + computed P&L.
-
-    Note: market_data.get_quote() is a *synchronous* call (yfinance doesn't
-    have a native async client), so this briefly blocks the event loop.
-    Fine for a portfolio of a handful of tickers; if this becomes a
-    bottleneck later, wrap it with asyncio's run_in_executor.
-    """
     try:
         quote = market_data.get_quote(holding.ticker)
     except Exception:

@@ -1,27 +1,3 @@
-"""
-LSTM training, persistence, and prediction.
-
-Three design choices worth understanding before you trust this output:
-
-1. The model predicts next-step RETURN (% change), not absolute price.
-   Predicting price directly ties the model's output range to whatever
-   price level it saw during training - if the stock moves well outside
-   that range later, predictions degrade badly. Returns are roughly
-   stationary regardless of price level, so this generalizes better.
-
-2. "Confidence bands" here are NOT a real probabilistic model output -
-   a plain LSTM trained this way doesn't produce one. What this actually
-   does: measure how wrong the model was on held-out validation data
-   (residual standard deviation), then widen that uncertainty for each
-   step further into the future using sqrt(step) - a standard heuristic
-   for how forecast error compounds, not a rigorous statistical interval.
-   Be honest with users about this if you show it on a chart.
-
-3. Training never happens inside a normal prediction request. It's
-   triggered explicitly via scripts/train_lstm.py or the /retrain
-   endpoint (which runs it as a background task) - never on the request
-   path that serves a chart, or every page load would retrain a model.
-"""
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -40,10 +16,6 @@ from app.services import market_data
 settings = get_settings()
 WINDOW_SIZE = 60
 
-# In-memory training-progress tracker, keyed by ticker. This is fine for a
-# single free-tier server instance; it would need to move to Mongo if this
-# app ever ran multiple replicas behind a load balancer, since each
-# replica would have its own copy of this dict.
 _training_status: dict[str, dict] = {}
 
 
@@ -63,8 +35,6 @@ def get_training_status(ticker: str) -> dict:
 
 
 class _ProgressCallback(keras.callbacks.Callback):
-    """Reports epoch-level progress into _training_status for the polling endpoint."""
-
     def __init__(self, ticker: str, total_epochs: int):
         super().__init__()
         self.ticker = ticker
@@ -83,20 +53,6 @@ class _ProgressCallback(keras.callbacks.Callback):
 
 
 def train_and_save_model(ticker: str, epochs: int = 100, period: str = "2y") -> dict:
-    """
-    Synchronous - meant to be called from a background task (see
-    app/api/predictions.py) or scripts/train_lstm.py, never from inside a
-    normal request/response cycle.
-
-    `epochs` is a MAXIMUM, not a target. EarlyStopping below halts
-    training once validation loss stops improving for 8 consecutive
-    epochs, and restores the weights from the best epoch rather than
-    whatever epoch training happened to stop on. There's no single fixed
-    epoch count that's correct across different tickers - a volatile
-    stock might start overfitting by epoch 15, a smoother one might
-    still be improving at epoch 60 - so the model decides for itself
-    when to stop instead of guessing one number for everything.
-    """
     ticker = ticker.upper()
     _training_status[ticker] = {"status": "training", "progress": 0, "message": "Fetching data"}
 
@@ -183,11 +139,6 @@ def load_model_and_meta(ticker: str):
 
 
 def predict(ticker: str, horizon: int = 7, confidence_z: float = 1.28) -> list[dict]:
-    """
-    confidence_z=1.28 corresponds to roughly an 80% interval under a
-    normal approximation of the residuals - a reasonable middle ground,
-    not a claim of rigorous statistical certainty (see module docstring).
-    """
     ticker = ticker.upper()
     model, scaler, meta = load_model_and_meta(ticker)
     window_size = meta["window_size"]
@@ -230,10 +181,6 @@ def predict(ticker: str, horizon: int = 7, confidence_z: float = 1.28) -> list[d
             "upper_bound": round(upper_close, 2),
         })
 
-        # Feed this prediction back in to extend the window for the next
-        # step. There's no real indicator data for a day that hasn't
-        # happened yet, so the last known feature row is carried forward
-        # and only the return is updated.
         next_row = window[-1].copy()
         next_row[return_col_idx] = predicted_return
         window = np.vstack([window[1:], next_row])
